@@ -1,0 +1,31 @@
+{
+  "name": "dependor-patent",
+  "version": "1.0.0",
+  "description": "CLI for dependency risk analysis with conflict prediction and behavioral fingerprinting",
+  "main": "lib/index.js",
+  "bin": {
+    "dependor": "bin/dependor.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node bin/dependor.js",
+    "check": "node bin/dependor.js check"
+  },
+  "keywords": [
+    "dependency",
+    "npm",
+    "risk",
+    "analysis"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "ora": "^5.4.1",
+    "semver": "^7.5.4",
+    "tar-stream": "^3.1.7",
+    "yargs": "^17.7.2"
+  }
+}
