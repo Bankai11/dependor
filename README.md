@@ -1,3 +1,18 @@
+# dependor
+
+Monorepo hosting three projects:
+
+- **[`dependor-di/`](./dependor-di/)** — `@wireup/core`: dependency-injection
+  library for Node.js and TypeScript. Published to npm with SLSA provenance
+  from this repo. Verify at [wireup.dev/security](https://wireup.dev/security).
+- **[`website/`](./website/)** — Wireup documentation and trust site.
+- **risk-analyzer CLI** — separate tool (repo root).
+
+Library releases are published by
+[`.github/workflows/publish.yml`](./.github/workflows/publish.yml).
+
+---
+
 # 🔍 Dependor
 
 > **Intelligent npm dependency risk analyzer** — analyze any npm package before you install it.

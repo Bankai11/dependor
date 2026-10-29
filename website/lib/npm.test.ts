@@ -175,14 +175,14 @@ describe('getProvenance', () => {
                 buildDefinition: {
                   externalParameters: {
                     workflow: {
-                      repository: 'https://github.com/<PLACEHOLDER_GH>/wireup',
+                      repository: 'https://github.com/Bankai11/dependor',
                       path: '.github/workflows/publish.yml',
                     },
                   },
                   resolvedDependencies: [{ digest: { gitCommit: 'deadbeef' } }],
                 },
                 runDetails: {
-                  metadata: { invocationId: 'https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1' },
+                  metadata: { invocationId: 'https://github.com/Bankai11/dependor/actions/runs/42/attempts/1' },
                 },
               },
               '2',
@@ -193,21 +193,21 @@ describe('getProvenance', () => {
     });
 
     const result = await getProvenance(PKG, '0.1.0', {
-      expectedRepository: 'git+https://github.com/<PLACEHOLDER_GH>/Wireup.git',
+      expectedRepository: 'git+https://github.com/bankai11/dependor.git',
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.verified).toBe(true);
     expect(result.data.count).toBe(2);
-    expect(result.data.sourceRepository).toBe('https://github.com/<PLACEHOLDER_GH>/wireup');
+    expect(result.data.sourceRepository).toBe('https://github.com/Bankai11/dependor');
     expect(result.data.workflowPath).toBe('.github/workflows/publish.yml');
     expect(result.data.commit).toBe('deadbeef');
-    expect(result.data.runUrl).toBe('https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1');
+    expect(result.data.runUrl).toBe('https://github.com/Bankai11/dependor/actions/runs/42/attempts/1');
     expect(result.data.urls).toEqual([
       url,
       'https://search.sigstore.dev/?logIndex=1',
       'https://search.sigstore.dev/?logIndex=2',
-      'https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1',
+      'https://github.com/Bankai11/dependor/actions/runs/42/attempts/1',
     ]);
     expect(result.data.predicateTypes).toHaveLength(2);
   });
@@ -230,7 +230,7 @@ describe('getProvenance', () => {
       },
     });
     const result = await getProvenance(PKG, '0.1.0', {
-      expectedRepository: 'https://github.com/<PLACEHOLDER_GH>/wireup',
+      expectedRepository: 'https://github.com/Bankai11/dependor',
     });
     expect(result.ok).toBe(true);
     if (result.ok) {

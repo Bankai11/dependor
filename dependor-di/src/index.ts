@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { asClass, asFunction, asValue, createContainer } from '@bankai11/dependor';
+ * import { asClass, asFunction, asValue, createContainer } from '@wireup/core';
  *
  * const container = createContainer({
  *   config: asValue({ greeting: 'hello' }),

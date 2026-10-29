@@ -131,7 +131,7 @@ Copy this into your upgrade PR.
       "Built and signed on GitHub Actions" panel.
 - [ ] `npm audit signatures` passes after `npm install` in a clean tree.
 - [ ] The attestation's **source repository** is
-      `github.com/<PLACEHOLDER_GH>/wireup`, the **workflow** is
+      `github.com/Bankai11/dependor`, the **workflow** is
       `.github/workflows/publish.yml`, and the **commit** is tagged
       `v<version>` in that repo.
 - [ ] The GitHub Actions run linked from the attestation is green and its

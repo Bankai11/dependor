@@ -4,8 +4,8 @@
 #
 # One-time setup on npmjs.com (Package -> Settings -> Trusted Publisher):
 #   Provider:  GitHub Actions
-#   Owner:     <PLACEHOLDER_GH>
-#   Repo:      wireup
+#   Owner:     Bankai11
+#   Repo:      dependor
 #   Workflow:  publish.yml          <- must match this file name exactly
 #   Env:       npm                  <- must match `environment:` below
 #
@@ -27,6 +27,10 @@ jobs:
   build:
     name: Build & verify tarball
     runs-on: ubuntu-latest
+    # The library lives in dependor-di/ of this monorepo.
+    defaults:
+      run:
+        working-directory: dependor-di
     permissions:
       contents: read
     outputs:
@@ -43,6 +47,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: dependor-di/package-lock.json
 
       - name: Install (lockfile only, no lifecycle scripts)
         run: npm ci --ignore-scripts
@@ -81,9 +86,11 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: npm-tarball
+          # Artifact paths resolve against the workspace root, not the job's
+          # working-directory.
           path: |
-            ${{ steps.meta.outputs.tarball }}
-            ${{ steps.meta.outputs.tarball }}.sha256
+            dependor-di/${{ steps.meta.outputs.tarball }}
+            dependor-di/${{ steps.meta.outputs.tarball }}.sha256
           if-no-files-found: error
           retention-days: 90
 
@@ -91,6 +98,11 @@ jobs:
     name: Publish to npm (Trusted Publishing + provenance)
     needs: build
     runs-on: ubuntu-latest
+    # No checkout here: the artifact is downloaded into dependor-di/ below so
+    # the publish step runs from the same directory the build job used.
+    defaults:
+      run:
+        working-directory: dependor-di
     # Protect this environment in repo settings (required reviewers) to add a
     # human approval gate in front of every publish.
     environment:
@@ -124,6 +136,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: npm-tarball
+          path: dependor-di
 
       - name: Verify tarball checksum
         run: sha256sum --check "${{ needs.build.outputs.tarball }}.sha256"
@@ -138,6 +151,9 @@ jobs:
     name: Attach tarball to GitHub release & verify
     needs: [build, publish]
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dependor-di
     permissions:
       contents: write
     steps:
@@ -145,6 +161,7 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: npm-tarball
+          path: dependor-di
 
       - name: Upload tarball and checksum to the release
         env:

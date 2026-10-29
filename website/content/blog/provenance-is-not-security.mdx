@@ -78,7 +78,7 @@ The npm version page shows the same data as a Provenance panel naming the commit
 npm pack @wireup/core@<version>
 sha256sum wireup-core-<version>.tgz
 
-# What CI built (download from https://github.com/<PLACEHOLDER_GH>/wireup/releases/tag/v<version>):
+# What CI built (download from https://github.com/Bankai11/dependor/releases/tag/v<version>):
 cat wireup-core-<version>.tgz.sha256
 ```
 
@@ -91,9 +91,9 @@ npm view @wireup/core repository.url homepage bugs.url
 ```
 
 ```text
-repository.url = 'git+https://github.com/<PLACEHOLDER_GH>/wireup.git'
-homepage = 'https://github.com/<PLACEHOLDER_GH>/wireup#readme'
-bugs.url = 'https://github.com/<PLACEHOLDER_GH>/wireup/issues'
+repository.url = 'git+https://github.com/Bankai11/dependor.git'
+homepage = 'https://github.com/Bankai11/dependor/tree/main/dependor-di#readme'
+bugs.url = 'https://github.com/Bankai11/dependor/issues'
 ```
 
 A typosquat can copy a README. It cannot produce an attestation naming this repository, so any field pointing elsewhere is disqualifying.
@@ -125,7 +125,7 @@ Provenance is not a verdict. It is a precondition.
 
 Condensed from the [consumer checklist](/security/threat-model#4-consumer-checklist-before-adopting-a-new-version) at the end of the threat model. The [interactive version](/security#adoption) remembers your ticks.
 
-1. `npm view @wireup/core@<version> dist.attestations` shows a provenance attestation whose source repository is `github.com/<PLACEHOLDER_GH>/wireup`, whose workflow is `.github/workflows/publish.yml`, and whose commit is tagged `v<version>`.
+1. `npm view @wireup/core@<version> dist.attestations` shows a provenance attestation whose source repository is `github.com/Bankai11/dependor`, whose workflow is `.github/workflows/publish.yml`, and whose commit is tagged `v<version>`.
 2. `npm audit signatures` passes after `npm install` in a clean tree, and the Actions run linked from the attestation is green with matching SHA-256 hashes.
 3. `npm pack @wireup/core@<version> --dry-run` lists only `dist/index.{js,cjs,d.ts,d.cts}`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`, and the tarball's `package.json` has empty `dependencies` and no `preinstall`, `install`, `postinstall` or `prepare` scripts.
 4. `CHANGELOG.md` has an entry for the version, the diff `v<previous>...v<version>` matches it, and you have skimmed `dist/index.js` for network, filesystem, `child_process`, `eval` or `Function` usage.

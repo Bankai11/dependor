@@ -1,0 +1,60 @@
+name: ci-website
+
+# Lint, typecheck, build and test the Wireup site in website/. The build reads
+# ../dependor-di/{README,SECURITY,THREAT_MODEL}.md and package.json, so a
+# library change can also break this; those paths are included in the filter.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'website/**'
+      - 'dependor-di/*.md'
+      - 'dependor-di/package.json'
+      - '.github/workflows/ci-website.yml'
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'dependor-di/*.md'
+      - 'dependor-di/package.json'
+      - '.github/workflows/ci-website.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  website:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22.12.0'
+          cache: 'npm'
+          cache-dependency-path: website/package-lock.json
+
+      - name: Install (lockfile only, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test --if-present

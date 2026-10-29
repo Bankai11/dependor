@@ -224,7 +224,7 @@ that what you installed is what this repository's CI built.
    npm pack @wireup/core@<version>
    sha256sum wireup-core-<version>.tgz
 
-   # What CI built (download from https://github.com/<PLACEHOLDER_GH>/wireup/releases/tag/v<version>):
+   # What CI built (download from https://github.com/Bankai11/dependor/releases/tag/v<version>):
    cat wireup-core-<version>.tgz.sha256
    ```
 
@@ -239,7 +239,7 @@ that what you installed is what this repository's CI built.
    npm view @wireup/core repository.url homepage bugs.url
    ```
 
-   All three must reference `github.com/<PLACEHOLDER_GH>/wireup`. A typosquat can
+   All three must reference `github.com/Bankai11/dependor`. A typosquat can
    copy this README but cannot produce a provenance attestation naming this
    repository.
 

@@ -29,5 +29,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `SECURITY.md`, `THREAT_MODEL.md` and a consumer verification guide in the
   README.
 
-[Unreleased]: https://github.com/<PLACEHOLDER_GH>/wireup/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/<PLACEHOLDER_GH>/wireup/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Bankai11/dependor/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Bankai11/dependor/releases/tag/v0.1.0

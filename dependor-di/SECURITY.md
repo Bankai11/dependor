@@ -16,9 +16,8 @@ Only the latest minor release line receives security fixes.
 Report privately through either channel:
 
 1. **GitHub private vulnerability reporting** (preferred):
-   <https://github.com/<PLACEHOLDER_GH>/wireup/security/advisories/new>
-2. **Email:** `security@YOUR-DOMAIN.example`
-   <!-- TODO(maintainer): replace with a real, monitored mailbox before publishing. -->
+   <https://github.com/Bankai11/dependor/security/advisories/new>
+2. **Email:** `security@wireup.dev`
 
 Include, where you can:
 

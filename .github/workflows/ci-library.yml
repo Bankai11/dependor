@@ -1,5 +1,8 @@
-name: CI
+name: ci-library
 
+# Runs the @wireup/core library checks. The library lives in dependor-di/ of
+# this monorepo, so every job sets that as its working directory and the
+# npm cache keys off dependor-di/package-lock.json.
 on:
   push:
     branches: [main]
@@ -22,6 +25,9 @@ jobs:
   test:
     name: Test (Node ${{ matrix.node }})
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dependor-di
     strategy:
       fail-fast: false
       matrix:
@@ -40,6 +46,7 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
           cache: npm
+          cache-dependency-path: dependor-di/package-lock.json
 
       # `npm ci` installs exactly what package-lock.json says and fails if the
       # lockfile and package.json disagree. `--ignore-scripts` refuses to run
@@ -68,12 +75,17 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: coverage-lcov
-          path: coverage/lcov.info
+          # Artifact paths resolve against the workspace root, not the job's
+          # working-directory.
+          path: dependor-di/coverage/lcov.info
           retention-days: 14
 
   guardrails:
     name: Supply-chain guardrails
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dependor-di
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -85,6 +97,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
+          cache-dependency-path: dependor-di/package-lock.json
 
       - name: Install (lockfile only, no lifecycle scripts)
         run: npm ci --ignore-scripts

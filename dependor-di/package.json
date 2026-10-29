@@ -10,13 +10,14 @@
     "typescript",
     "inversion-of-control"
   ],
-  "homepage": "https://github.com/<PLACEHOLDER_GH>/wireup#readme",
+  "homepage": "https://github.com/Bankai11/dependor/tree/main/dependor-di#readme",
   "bugs": {
-    "url": "https://github.com/<PLACEHOLDER_GH>/wireup/issues"
+    "url": "https://github.com/Bankai11/dependor/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/<PLACEHOLDER_GH>/wireup.git"
+    "url": "git+https://github.com/Bankai11/dependor.git",
+    "directory": "dependor-di"
   },
   "license": "MIT",
   "author": "Bankai11",
