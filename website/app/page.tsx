@@ -19,10 +19,13 @@ export default function Home() {
         A tiny, zero-dependency, type-safe container for Node.js and TypeScript, published only from CI with signed
         provenance.
       </p>
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap gap-3">
         <Link href="/security" className={buttonVariants({ size: 'lg' })}>
           Verify the supply chain
           <ArrowRightIcon aria-hidden="true" data-icon="inline-end" />
+        </Link>
+        <Link href="/blog" className={buttonVariants({ size: 'lg', variant: 'outline' })}>
+          Read the blog
         </Link>
       </div>
     </main>

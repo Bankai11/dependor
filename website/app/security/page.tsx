@@ -264,7 +264,6 @@ export default async function SecurityPage() {
               A green attestation means the tarball was built by this repo&apos;s CI — it does not mean the code is
               free of bugs, and it does not protect you if the maintainer account is compromised. That is why step 6
               (diffing dist/index.js) exists. Treat provenance as{' '}
-              {/* TODO: /blog/provenance-is-not-security does not exist yet. */}
               <Link href="/blog/provenance-is-not-security" className="underline underline-offset-4">
                 one signal among several
               </Link>

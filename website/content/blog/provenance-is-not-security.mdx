@@ -1,0 +1,136 @@
+---
+title: "Provenance is not security"
+description: "A green SLSA attestation proves where a package came from, not that it is safe to run. Provenance as one signal among several, with a worked example."
+date: 2026-10-29
+author: "The Wireup team"
+tags: ["supply-chain", "security", "npm", "provenance", "slsa"]
+canonical: "https://wireup.dev/blog/provenance-is-not-security"
+ogImage: "/blog/provenance-is-not-security/opengraph-image"
+---
+
+{/* TODO: rename to @wireup/core on scope registration — global search-replace, do not hardcode in prose. */}
+
+## The green checkmark problem
+
+npm now renders a Provenance panel on a package's version page, and `npm audit signatures` prints a count of verified attestations. Both are good. Both invite the same shortcut: a green result gets read as "this package is safe." The attestation answers one question precisely: which repository, commit and workflow produced this exact tarball. It does not say whether the person who triggered that workflow was the maintainer, whether anyone read the diff, or whether the toolchain that ran the build was itself intact. The [Wireup security page](/security) says this in an amber box. This post is the long version; it applies to `@bankai11/dependor` as much as to any package carrying the badge.
+
+## What provenance actually proves
+
+Two signatures travel with a package published from a supported CI provider, and they prove different things.
+
+**SLSA provenance** is an [in-toto](https://in-toto.io/) attestation whose predicate type is [`https://slsa.dev/provenance/v1`](https://slsa.dev/provenance/v1). The specification defines provenance as [verifiable information that tracks an artifact back to how it was produced](https://slsa.dev/spec/v1.2/provenance). The subject is the tarball digest. The predicate records the source repository and commit, the workflow file, the build parameters and the builder's identity. npm describes it as [a verifiable link to a package's source code and build instructions](https://docs.npmjs.com/generating-provenance-statements), signed with a short-lived Sigstore certificate and recorded in a public [transparency log](https://docs.sigstore.dev/logging/overview/). It is only issued for builds on a cloud-hosted runner of a supported provider, today GitHub Actions or GitLab CI/CD.
+
+**Registry signatures** are older and narrower. The registry signs the string `name@version:integrity` with an ECDSA P-256 key published at `/-/npm/v1/keys` and stores the result in the version's `dist.signatures` ([about registry signatures](https://docs.npmjs.com/about-registry-signatures)). That proves the tarball you downloaded is the one the registry has on record for that version. It says nothing about where the bytes came from.
+
+[`npm audit signatures`](https://docs.npmjs.com/cli/v10/commands/npm-audit#audit-signatures) checks both. Together they establish origin and integrity: this build platform, acting on this repository at this commit, produced bytes with this digest, and those are the bytes you have. Every word of that is useful. None of it is a verdict on the code.
+
+## What provenance does not prove
+
+**Origin is not intent.** The attestation names an account and a workflow, not anyone's intentions. Consider [hypothetical]: a maintainer's GitHub credentials are phished. The attacker pushes a commit that adds a credential-reading `postinstall` script, tags a patch release, and lets the existing publish workflow run. The resulting attestation is valid, names the right repository and workflow, and `npm audit signatures` reports it as verified. The package's threat model records exactly that [residual risk](/security/threat-model#21-account-takeover-of-a-maintainer-npm-or-github): write access plus the ability to create a release is enough to publish. SLSA itself [does not address organizations that intentionally produce malicious software](https://slsa.dev/spec/v1.2/about).
+
+**Attestation is not review.** Provenance records that a build happened, not that anyone read what was built. SLSA states that it [does not tell you whether the developers writing the source code followed secure coding practices](https://slsa.dev/spec/v1.2/about), and npm's documentation says provenance [does not guarantee the package has no malicious code](https://docs.npmjs.com/generating-provenance-statements). A bug, or a backdoor merged through the normal review process, ships with a perfect attestation.
+
+**Repository is not tarball.** The subject digest binds the tarball to the attested build, and the SLSA Build track [addresses tampering of the build process](https://slsa.dev/spec/v1.2/threats). What it cannot vouch for is the build's own inputs. A compromised compiler, bundler or test runner shapes the output while the attestation stays valid. Provenance narrows this window, because anyone can rebuild from the attested commit and compare, but it does not close it. That is why the package ships [unminified output without source maps](/security/threat-model#24-compromised-devdependencies-build-toolchain): the comparison is a diff rather than an act of faith.
+
+**Your provenance covers your package.** SLSA is explicit that [the level of an artifact is independent of the level of its dependencies](https://slsa.dev/spec/v1.2/about) and that [this version of SLSA does not explicitly address dependency threats](https://slsa.dev/spec/v1.2/threats). An attestation on the top-level package says nothing about what its dependencies ship. `@bankai11/dependor` sidesteps this by declaring no runtime dependencies, a property its CI enforces, but that is a fact to re-check on every release, not something provenance tells you.
+
+## A worked example: verifying Wireup end to end
+
+The six steps below are the "How to verify this package" section of the package README, with the output to expect. They also run as an interactive [checklist on the security page](/security#checklist). Replace `<version>` with the release you are adopting; the first supported line is 0.1.x.
+
+**1. Verify registry signatures and provenance.**
+
+```sh
+npm install @bankai11/dependor
+npm audit signatures
+```
+
+For a package with no dependencies, a pass looks like this:
+
+```text
+audited 1 package in 1s
+
+1 package has a verified registry signature
+
+1 package has a verified attestation
+(use --json --include-attestations to view attestation details)
+```
+
+Any `missing` or `invalid` count is a stop: either the tarball is not what the registry signed, or no CI build vouches for it.
+
+**2. Inspect the attestation on npm.**
+
+```sh
+npm view @bankai11/dependor@<version> dist.attestations
+```
+
+```text
+{
+  url: 'https://registry.npmjs.org/-/npm/v1/attestations/@bankai11%2fdependor@<version>',
+  provenance: { predicateType: 'https://slsa.dev/provenance/v1' }
+}
+```
+
+The npm version page shows the same data as a Provenance panel naming the commit, the workflow file `.github/workflows/publish.yml` and the Actions run. No panel, or a panel naming a different repository, means this project's CI did not publish the package.
+
+**3. Compare the tarball hash with the GitHub release asset.**
+
+```sh
+# What the registry serves:
+npm pack @bankai11/dependor@<version>
+sha256sum bankai11-dependor-<version>.tgz
+
+# What CI built (download from https://github.com/Bankai11/dependor/releases/tag/v<version>):
+cat bankai11-dependor-<version>.tgz.sha256
+```
+
+The two hashes must be identical, and `npm pack --dry-run` should list only `dist/index.js`, `dist/index.cjs`, `dist/index.d.ts`, `dist/index.d.cts`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`. A different hash, or a `.map`, `test/` or `.github/` entry, means the registry copy is not what CI built.
+
+**4. Check the package metadata points at the real repo.**
+
+```sh
+npm view @bankai11/dependor repository.url homepage bugs.url
+```
+
+```text
+repository.url = 'git+https://github.com/Bankai11/dependor.git'
+homepage = 'https://github.com/Bankai11/dependor#readme'
+bugs.url = 'https://github.com/Bankai11/dependor/issues'
+```
+
+A typosquat can copy a README. It cannot produce an attestation naming this repository, so any field pointing elsewhere is disqualifying.
+
+**5. Review the Actions run that produced the release.** There is no command; follow the link from the Provenance panel. The run should be green, triggered by a `release: published` event for tag `v<version>`, and its final step, "Verify published package", prints the built and registry SHA-256 hashes side by side. A red run, a manual trigger or a different workflow file fails the step.
+
+**6. Diff `dist/index.js` between versions.**
+
+```sh
+npm pack @bankai11/dependor@<previous> @bankai11/dependor@<version>
+mkdir prev next && tar -xzf bankai11-dependor-<previous>.tgz -C prev && tar -xzf bankai11-dependor-<version>.tgz -C next
+diff -u prev/package/dist/index.js next/package/dist/index.js
+```
+
+The file is unminified and about 200 lines. The diff should match the `CHANGELOG.md` entry and contain no network, filesystem, `child_process`, `eval` or `Function` usage. Anything the changelog does not explain is the red flag the previous five steps cannot raise.
+
+## Provenance as one signal among several
+
+Side by side, the four signals make the shape of the argument clear.
+
+- **Signal 1: provenance.** Origin and integrity. Necessary, because without it you cannot even name the commit you are about to run. Insufficient, for every reason above.
+- **Signal 2: the diff.** Reading `dist/index.js` between the version you run and the one you are adopting. This is the step most people skip, and the only one that catches malicious code provenance will happily attest to.
+- **Signal 3: maintainer posture.** [Two-factor authentication](https://docs.npmjs.com/configuring-two-factor-authentication) on the publishing accounts, [trusted publishing](https://docs.npmjs.com/trusted-publishers) instead of long-lived tokens, no [install-time scripts](https://docs.npmjs.com/cli/v10/using-npm/scripts), and a dependency list short enough to audit. Each is documented in the package's [threat model](/security/threat-model).
+- **Signal 4: your own CI.** A committed lockfile installed with [`npm ci`](https://docs.npmjs.com/cli/v10/commands/npm-ci), exact pins, and `npm audit signatures` as a required check, so a regression on any other signal fails your build rather than your users.
+
+Provenance is not a verdict. It is a precondition.
+
+## What to do before your next npm install
+
+Condensed from the [consumer checklist](/security/threat-model#4-consumer-checklist-before-adopting-a-new-version) at the end of the threat model. The [interactive version](/security#adoption) remembers your ticks.
+
+1. `npm view @bankai11/dependor@<version> dist.attestations` shows a provenance attestation whose source repository is `github.com/Bankai11/dependor`, whose workflow is `.github/workflows/publish.yml`, and whose commit is tagged `v<version>`.
+2. `npm audit signatures` passes after `npm install` in a clean tree, and the Actions run linked from the attestation is green with matching SHA-256 hashes.
+3. `npm pack @bankai11/dependor@<version> --dry-run` lists only `dist/index.{js,cjs,d.ts,d.cts}`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`, and the tarball's `package.json` has empty `dependencies` and no `preinstall`, `install`, `postinstall` or `prepare` scripts.
+4. `CHANGELOG.md` has an entry for the version, the diff `v<previous>...v<version>` matches it, and you have skimmed `dist/index.js` for network, filesystem, `child_process`, `eval` or `Function` usage.
+5. Your own tests pass with the new version pinned exactly, with no `^`.
+
+Every command above is on the [security page](/security) next to a live attestation badge for the current release. If any step produces something this post does not predict, report it privately through the [disclosure policy](/security/policy), which commits to a 90-day coordinated window.
