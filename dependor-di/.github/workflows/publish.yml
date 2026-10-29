@@ -1,0 +1,187 @@
+# Release pipeline: build once, publish that exact tarball to npm with SLSA
+# provenance via Trusted Publishing (GitHub OIDC), then attach the same tarball
+# and its SHA-256 to the GitHub release so consumers can compare.
+#
+# One-time setup on npmjs.com (Package -> Settings -> Trusted Publisher):
+#   Provider:  GitHub Actions
+#   Owner:     Bankai11
+#   Repo:      dependor
+#   Workflow:  publish.yml          <- must match this file name exactly
+#   Env:       npm                  <- must match `environment:` below
+#
+# There is NO NPM_TOKEN secret anywhere in this repository. If someone adds
+# one, treat it as a regression (see THREAT_MODEL.md).
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+# Default to no permissions; each job asks for exactly what it needs.
+permissions: {}
+
+env:
+  NODE_VERSION: "24.22.2"
+
+jobs:
+  build:
+    name: Build & verify tarball
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      tarball: ${{ steps.meta.outputs.tarball }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install (lockfile only, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      # The git tag (vX.Y.Z) must match package.json so provenance, the
+      # changelog and the registry all agree on what was released.
+      - name: Tag matches package.json version
+        id: meta
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "::error::Release tag $TAG does not match package.json version v$VERSION"; exit 1
+          fi
+          NAME=$(node -p "require('./package.json').name.replace(/^@/, '').replace('/', '-')")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tarball=$NAME-$VERSION.tgz" >> "$GITHUB_OUTPUT"
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      - name: Pack
+        run: npm pack
+
+      - name: Checksum
+        run: sha256sum "${{ steps.meta.outputs.tarball }}" | tee "${{ steps.meta.outputs.tarball }}.sha256"
+
+      - name: Upload tarball artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: npm-tarball
+          path: |
+            ${{ steps.meta.outputs.tarball }}
+            ${{ steps.meta.outputs.tarball }}.sha256
+          if-no-files-found: error
+          retention-days: 90
+
+  publish:
+    name: Publish to npm (Trusted Publishing + provenance)
+    needs: build
+    runs-on: ubuntu-latest
+    # Protect this environment in repo settings (required reviewers) to add a
+    # human approval gate in front of every publish.
+    environment:
+      name: npm
+      url: https://www.npmjs.com/package/@bankai11/dependor/v/${{ needs.build.outputs.version }}
+    permissions:
+      # SECURITY-SENSITIVE: `id-token: write` lets this job mint a short-lived
+      # OIDC token that npm exchanges for publish rights. No long-lived token.
+      id-token: write
+      contents: read
+    steps:
+      - name: Set up Node with npm registry
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          registry-url: https://registry.npmjs.org
+
+      # Trusted Publishing requires npm >= 11.5.1. Node 24.22.2 ships 11.19.1;
+      # this guard fails loudly if the pinned Node ever changes that.
+      - name: Verify npm supports Trusted Publishing
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "npm $NPM_VERSION"
+          node -e '
+            const [major, minor, patch] = process.argv[1].split(".").map(Number);
+            const ok = major > 11 || (major === 11 && (minor > 5 || (minor === 5 && patch >= 1)));
+            if (!ok) { console.error("npm >= 11.5.1 required for Trusted Publishing"); process.exit(1); }
+          ' "$NPM_VERSION"
+
+      - name: Download tarball artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: npm-tarball
+
+      - name: Verify tarball checksum
+        run: sha256sum --check "${{ needs.build.outputs.tarball }}.sha256"
+
+      # Publishes the exact tarball built above. `--provenance` asks npm to
+      # generate and upload a Sigstore-signed SLSA attestation linking this
+      # tarball to this workflow run and commit.
+      - name: Publish
+        run: npm publish "./${{ needs.build.outputs.tarball }}" --provenance --access public
+
+  release-assets:
+    name: Attach tarball to GitHub release & verify
+    needs: [build, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download tarball artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: npm-tarball
+
+      - name: Upload tarball and checksum to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          gh release upload "$TAG" \
+            "${{ needs.build.outputs.tarball }}" \
+            "${{ needs.build.outputs.tarball }}.sha256" \
+            --clobber
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # Pull the just-published version back from the registry and confirm
+      # (a) its SHA-256 matches what we built and (b) its registry signature
+      # and provenance attestation verify. Retries cover registry propagation.
+      - name: Verify published package (hash + npm audit signatures)
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+          TARBALL: ${{ needs.build.outputs.tarball }}
+        run: |
+          set -euo pipefail
+          EXPECTED=$(cut -d' ' -f1 "$TARBALL.sha256")
+          for attempt in 1 2 3 4 5; do
+            if npm view "@bankai11/dependor@$VERSION" version >/dev/null 2>&1; then break; fi
+            echo "Registry not ready (attempt $attempt), waiting..."; sleep 20
+          done
+          mkdir verify && cd verify
+          npm pack "@bankai11/dependor@$VERSION" --silent
+          ACTUAL=$(sha256sum ./*.tgz | cut -d' ' -f1)
+          echo "built:     $EXPECTED"
+          echo "registry:  $ACTUAL"
+          [ "$EXPECTED" = "$ACTUAL" ] || { echo "::error::Published tarball differs from built tarball"; exit 1; }
+          npm init -y >/dev/null
+          npm install "@bankai11/dependor@$VERSION" --ignore-scripts --no-audit --no-fund
+          npm audit signatures

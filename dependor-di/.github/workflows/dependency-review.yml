@@ -1,0 +1,70 @@
+# Gate every pull request on what it changes in the dependency tree.
+#
+#  1. GitHub Dependency Review: diffs the lockfile against the base branch,
+#     fails on new high/critical advisories or disallowed licenses.
+#  2. Socket: behavioural analysis of new/changed packages (install scripts,
+#     network/shell/filesystem access, obfuscation, typosquats). Runs only
+#     when the SOCKET_SECURITY_API_KEY secret is available, so forks' PRs
+#     still get the GitHub gate without needing the secret.
+name: Dependency Review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: GitHub dependency review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write # to post the summary comment on failure
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@v5
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          # The library is MIT; refuse copyleft licenses sneaking into the tree.
+          deny-licenses: GPL-2.0, GPL-3.0, AGPL-3.0, LGPL-2.1, LGPL-3.0
+          fail-on-scopes: development, runtime
+
+  socket:
+    name: Socket.dev scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      SOCKET_KEY: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Check for Socket API key
+        id: key
+        run: |
+          if [ -n "$SOCKET_KEY" ]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::SOCKET_SECURITY_API_KEY not set; skipping Socket scan"
+          fi
+
+      - name: Socket Basics scan
+        if: steps.key.outputs.present == 'true'
+        uses: SocketDev/socket-basics@v3.4.1
+        with:
+          socket_security_api_key: ${{ secrets.SOCKET_SECURITY_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          scan_all: true

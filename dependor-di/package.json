@@ -1,0 +1,69 @@
+{
+  "name": "@bankai11/dependor",
+  "version": "0.1.0",
+  "description": "Tiny, zero-dependency, type-safe dependency injection container for Node.js and TypeScript",
+  "keywords": [
+    "dependency-injection",
+    "di",
+    "ioc",
+    "container",
+    "typescript",
+    "inversion-of-control"
+  ],
+  "homepage": "https://github.com/Bankai11/dependor#readme",
+  "bugs": {
+    "url": "https://github.com/Bankai11/dependor/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bankai11/dependor.git"
+  },
+  "license": "MIT",
+  "author": "Bankai11",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "check": "npm run typecheck && npm test && npm run build && npm run pack:check",
+    "pack:check": "npm pack --dry-run",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "5.0.5",
+    "tsup": "9.0.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.5"
+  }
+}

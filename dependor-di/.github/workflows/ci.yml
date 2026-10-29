@@ -1,0 +1,138 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Least privilege: CI only needs to read the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Exact pin (SECURITY-SENSITIVE): a floating "24.x" would let a new Node
+  # release silently change the toolchain that validates releases.
+  NODE_VERSION: "24.22.2"
+
+jobs:
+  test:
+    name: Test (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # The library targets Node >= 18 (see engines + tsup target), but the
+        # test toolchain (Vitest 5) needs Node >= 22.12, so the matrix covers
+        # the two active LTS lines.
+        node: ["22.23.4", "24.22.2"]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      # `npm ci` installs exactly what package-lock.json says and fails if the
+      # lockfile and package.json disagree. `--ignore-scripts` refuses to run
+      # any lifecycle script from devDependencies (SECURITY-SENSITIVE: this
+      # neutralises malicious postinstall hooks in the dev toolchain).
+      - name: Install (lockfile only, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      - name: Lockfile unchanged by install
+        run: git diff --exit-code -- package-lock.json
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test (unit + integration + type tests, coverage gate >= 95%)
+        run: npm test
+
+      - name: Build (ESM + CJS + d.ts)
+        run: npm run build
+
+      - name: Verify published file set
+        run: npm run pack:check
+
+      - name: Upload coverage report
+        if: matrix.node == env.NODE_VERSION
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          retention-days: 14
+
+  guardrails:
+    name: Supply-chain guardrails
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install (lockfile only, no lifecycle scripts)
+        run: npm ci --ignore-scripts
+
+      # Fails the build on any high or critical advisory in the dev tree.
+      - name: npm audit (fail on high/critical)
+        run: npm audit --audit-level=high
+
+      - name: Zero runtime dependencies
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+            for (const field of ["dependencies", "peerDependencies", "optionalDependencies"]) {
+              const count = Object.keys(pkg[field] ?? {}).length;
+              if (count > 0) { console.error(`${field} must be empty, found ${count}`); process.exit(1); }
+            }
+            console.log("OK: no runtime dependencies");
+          '
+
+      - name: No lifecycle scripts that run on consumer install
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const { scripts = {} } = JSON.parse(readFileSync("package.json", "utf8"));
+            const banned = ["preinstall", "install", "postinstall", "prepare"];
+            const found = banned.filter((s) => s in scripts);
+            if (found.length) { console.error("Forbidden install-time scripts:", found.join(", ")); process.exit(1); }
+            console.log("OK: no install-time scripts");
+          '
+
+      - name: devDependencies are pinned exactly
+        run: |
+          node --input-type=module -e '
+            import { readFileSync } from "node:fs";
+            const { devDependencies = {} } = JSON.parse(readFileSync("package.json", "utf8"));
+            const loose = Object.entries(devDependencies).filter(([, v]) => !/^\d+\.\d+\.\d+$/.test(v));
+            if (loose.length) { console.error("Unpinned devDependencies:", loose); process.exit(1); }
+            console.log("OK: all devDependencies pinned");
+          '
+
+      - name: Build and scan output for forbidden constructs
+        run: |
+          npm run build
+          if grep -nE '\beval\s*\(|new\s+Function\s*\(|\bFunction\s*\(' dist/*.js dist/*.cjs; then
+            echo "::error::eval/Function usage found in build output"; exit 1
+          fi
+          if ls dist/*.map >/dev/null 2>&1; then
+            echo "::error::source maps must not be published"; exit 1
+          fi
+          echo "OK: build output clean"
