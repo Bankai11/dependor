@@ -12,8 +12,8 @@ import {
   verifyRegistrySignature,
 } from './npm';
 
-const PKG = '@bankai11/dependor';
-const ENCODED = '@bankai11%2Fdependor';
+const PKG = '@wireup/core';
+const ENCODED = '@wireup%2Fcore';
 
 type Route = { status: number; body?: unknown } | Error;
 
@@ -76,7 +76,7 @@ describe('getLatestVersion', () => {
           version: '0.1.0',
           dist: {
             integrity: 'sha512-abc',
-            tarball: 'https://registry.npmjs.org/@bankai11/dependor/-/dependor-0.1.0.tgz',
+            tarball: 'https://registry.npmjs.org/@wireup/core/-/core-0.1.0.tgz',
             attestations: {
               url: `${REGISTRY_URL}/-/npm/v1/attestations/${ENCODED}@0.1.0`,
               provenance: { predicateType: 'https://slsa.dev/provenance/v1' },
@@ -97,7 +97,7 @@ describe('getLatestVersion', () => {
         name: PKG,
         version: '0.1.0',
         integrity: 'sha512-abc',
-        tarball: 'https://registry.npmjs.org/@bankai11/dependor/-/dependor-0.1.0.tgz',
+        tarball: 'https://registry.npmjs.org/@wireup/core/-/core-0.1.0.tgz',
         publishedAt: '2026-10-29T10:00:00.000Z',
         attestationsUrl: `${REGISTRY_URL}/-/npm/v1/attestations/${ENCODED}@0.1.0`,
         provenancePredicateType: 'https://slsa.dev/provenance/v1',
@@ -175,14 +175,14 @@ describe('getProvenance', () => {
                 buildDefinition: {
                   externalParameters: {
                     workflow: {
-                      repository: 'https://github.com/Bankai11/dependor',
+                      repository: 'https://github.com/<PLACEHOLDER_GH>/wireup',
                       path: '.github/workflows/publish.yml',
                     },
                   },
                   resolvedDependencies: [{ digest: { gitCommit: 'deadbeef' } }],
                 },
                 runDetails: {
-                  metadata: { invocationId: 'https://github.com/Bankai11/dependor/actions/runs/42/attempts/1' },
+                  metadata: { invocationId: 'https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1' },
                 },
               },
               '2',
@@ -193,21 +193,21 @@ describe('getProvenance', () => {
     });
 
     const result = await getProvenance(PKG, '0.1.0', {
-      expectedRepository: 'git+https://github.com/bankai11/dependor.git',
+      expectedRepository: 'git+https://github.com/<PLACEHOLDER_GH>/Wireup.git',
     });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.verified).toBe(true);
     expect(result.data.count).toBe(2);
-    expect(result.data.sourceRepository).toBe('https://github.com/Bankai11/dependor');
+    expect(result.data.sourceRepository).toBe('https://github.com/<PLACEHOLDER_GH>/wireup');
     expect(result.data.workflowPath).toBe('.github/workflows/publish.yml');
     expect(result.data.commit).toBe('deadbeef');
-    expect(result.data.runUrl).toBe('https://github.com/Bankai11/dependor/actions/runs/42/attempts/1');
+    expect(result.data.runUrl).toBe('https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1');
     expect(result.data.urls).toEqual([
       url,
       'https://search.sigstore.dev/?logIndex=1',
       'https://search.sigstore.dev/?logIndex=2',
-      'https://github.com/Bankai11/dependor/actions/runs/42/attempts/1',
+      'https://github.com/<PLACEHOLDER_GH>/wireup/actions/runs/42/attempts/1',
     ]);
     expect(result.data.predicateTypes).toHaveLength(2);
   });
@@ -221,7 +221,7 @@ describe('getProvenance', () => {
             provenanceBundle({
               buildDefinition: {
                 externalParameters: {
-                  workflow: { repository: 'https://github.com/someone-else/dependor', path: 'x.yml' },
+                  workflow: { repository: 'https://github.com/someone-else/wireup', path: 'x.yml' },
                 },
               },
             }),
@@ -230,12 +230,12 @@ describe('getProvenance', () => {
       },
     });
     const result = await getProvenance(PKG, '0.1.0', {
-      expectedRepository: 'https://github.com/Bankai11/dependor',
+      expectedRepository: 'https://github.com/<PLACEHOLDER_GH>/wireup',
     });
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.data.verified).toBe(false);
-      expect(result.data.sourceRepository).toBe('https://github.com/someone-else/dependor');
+      expect(result.data.sourceRepository).toBe('https://github.com/someone-else/wireup');
     }
   });
 

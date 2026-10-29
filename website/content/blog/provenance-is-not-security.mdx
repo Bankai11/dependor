@@ -8,11 +8,9 @@ canonical: "https://wireup.dev/blog/provenance-is-not-security"
 ogImage: "/blog/provenance-is-not-security/opengraph-image"
 ---
 
-{/* TODO: rename to @wireup/core on scope registration — global search-replace, do not hardcode in prose. */}
-
 ## The green checkmark problem
 
-npm now renders a Provenance panel on a package's version page, and `npm audit signatures` prints a count of verified attestations. Both are good. Both invite the same shortcut: a green result gets read as "this package is safe." The attestation answers one question precisely: which repository, commit and workflow produced this exact tarball. It does not say whether the person who triggered that workflow was the maintainer, whether anyone read the diff, or whether the toolchain that ran the build was itself intact. The [Wireup security page](/security) says this in an amber box. This post is the long version; it applies to `@bankai11/dependor` as much as to any package carrying the badge.
+npm now renders a Provenance panel on a package's version page, and `npm audit signatures` prints a count of verified attestations. Both are good. Both invite the same shortcut: a green result gets read as "this package is safe." The attestation answers one question precisely: which repository, commit and workflow produced this exact tarball. It does not say whether the person who triggered that workflow was the maintainer, whether anyone read the diff, or whether the toolchain that ran the build was itself intact. The [Wireup security page](/security) says this in an amber box. This post is the long version; it applies to `@wireup/core` as much as to any package carrying the badge.
 
 ## What provenance actually proves
 
@@ -32,7 +30,7 @@ Two signatures travel with a package published from a supported CI provider, and
 
 **Repository is not tarball.** The subject digest binds the tarball to the attested build, and the SLSA Build track [addresses tampering of the build process](https://slsa.dev/spec/v1.2/threats). What it cannot vouch for is the build's own inputs. A compromised compiler, bundler or test runner shapes the output while the attestation stays valid. Provenance narrows this window, because anyone can rebuild from the attested commit and compare, but it does not close it. That is why the package ships [unminified output without source maps](/security/threat-model#24-compromised-devdependencies-build-toolchain): the comparison is a diff rather than an act of faith.
 
-**Your provenance covers your package.** SLSA is explicit that [the level of an artifact is independent of the level of its dependencies](https://slsa.dev/spec/v1.2/about) and that [this version of SLSA does not explicitly address dependency threats](https://slsa.dev/spec/v1.2/threats). An attestation on the top-level package says nothing about what its dependencies ship. `@bankai11/dependor` sidesteps this by declaring no runtime dependencies, a property its CI enforces, but that is a fact to re-check on every release, not something provenance tells you.
+**Your provenance covers your package.** SLSA is explicit that [the level of an artifact is independent of the level of its dependencies](https://slsa.dev/spec/v1.2/about) and that [this version of SLSA does not explicitly address dependency threats](https://slsa.dev/spec/v1.2/threats). An attestation on the top-level package says nothing about what its dependencies ship. `@wireup/core` sidesteps this by declaring no runtime dependencies, a property its CI enforces, but that is a fact to re-check on every release, not something provenance tells you.
 
 ## A worked example: verifying Wireup end to end
 
@@ -41,7 +39,7 @@ The six steps below are the "How to verify this package" section of the package 
 **1. Verify registry signatures and provenance.**
 
 ```sh
-npm install @bankai11/dependor
+npm install @wireup/core
 npm audit signatures
 ```
 
@@ -61,12 +59,12 @@ Any `missing` or `invalid` count is a stop: either the tarball is not what the r
 **2. Inspect the attestation on npm.**
 
 ```sh
-npm view @bankai11/dependor@<version> dist.attestations
+npm view @wireup/core@<version> dist.attestations
 ```
 
 ```text
 {
-  url: 'https://registry.npmjs.org/-/npm/v1/attestations/@bankai11%2fdependor@<version>',
+  url: 'https://registry.npmjs.org/-/npm/v1/attestations/@wireup%2fcore@<version>',
   provenance: { predicateType: 'https://slsa.dev/provenance/v1' }
 }
 ```
@@ -77,11 +75,11 @@ The npm version page shows the same data as a Provenance panel naming the commit
 
 ```sh
 # What the registry serves:
-npm pack @bankai11/dependor@<version>
-sha256sum bankai11-dependor-<version>.tgz
+npm pack @wireup/core@<version>
+sha256sum wireup-core-<version>.tgz
 
-# What CI built (download from https://github.com/Bankai11/dependor/releases/tag/v<version>):
-cat bankai11-dependor-<version>.tgz.sha256
+# What CI built (download from https://github.com/<PLACEHOLDER_GH>/wireup/releases/tag/v<version>):
+cat wireup-core-<version>.tgz.sha256
 ```
 
 The two hashes must be identical, and `npm pack --dry-run` should list only `dist/index.js`, `dist/index.cjs`, `dist/index.d.ts`, `dist/index.d.cts`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`. A different hash, or a `.map`, `test/` or `.github/` entry, means the registry copy is not what CI built.
@@ -89,13 +87,13 @@ The two hashes must be identical, and `npm pack --dry-run` should list only `dis
 **4. Check the package metadata points at the real repo.**
 
 ```sh
-npm view @bankai11/dependor repository.url homepage bugs.url
+npm view @wireup/core repository.url homepage bugs.url
 ```
 
 ```text
-repository.url = 'git+https://github.com/Bankai11/dependor.git'
-homepage = 'https://github.com/Bankai11/dependor#readme'
-bugs.url = 'https://github.com/Bankai11/dependor/issues'
+repository.url = 'git+https://github.com/<PLACEHOLDER_GH>/wireup.git'
+homepage = 'https://github.com/<PLACEHOLDER_GH>/wireup#readme'
+bugs.url = 'https://github.com/<PLACEHOLDER_GH>/wireup/issues'
 ```
 
 A typosquat can copy a README. It cannot produce an attestation naming this repository, so any field pointing elsewhere is disqualifying.
@@ -105,8 +103,8 @@ A typosquat can copy a README. It cannot produce an attestation naming this repo
 **6. Diff `dist/index.js` between versions.**
 
 ```sh
-npm pack @bankai11/dependor@<previous> @bankai11/dependor@<version>
-mkdir prev next && tar -xzf bankai11-dependor-<previous>.tgz -C prev && tar -xzf bankai11-dependor-<version>.tgz -C next
+npm pack @wireup/core@<previous> @wireup/core@<version>
+mkdir prev next && tar -xzf wireup-core-<previous>.tgz -C prev && tar -xzf wireup-core-<version>.tgz -C next
 diff -u prev/package/dist/index.js next/package/dist/index.js
 ```
 
@@ -127,9 +125,9 @@ Provenance is not a verdict. It is a precondition.
 
 Condensed from the [consumer checklist](/security/threat-model#4-consumer-checklist-before-adopting-a-new-version) at the end of the threat model. The [interactive version](/security#adoption) remembers your ticks.
 
-1. `npm view @bankai11/dependor@<version> dist.attestations` shows a provenance attestation whose source repository is `github.com/Bankai11/dependor`, whose workflow is `.github/workflows/publish.yml`, and whose commit is tagged `v<version>`.
+1. `npm view @wireup/core@<version> dist.attestations` shows a provenance attestation whose source repository is `github.com/<PLACEHOLDER_GH>/wireup`, whose workflow is `.github/workflows/publish.yml`, and whose commit is tagged `v<version>`.
 2. `npm audit signatures` passes after `npm install` in a clean tree, and the Actions run linked from the attestation is green with matching SHA-256 hashes.
-3. `npm pack @bankai11/dependor@<version> --dry-run` lists only `dist/index.{js,cjs,d.ts,d.cts}`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`, and the tarball's `package.json` has empty `dependencies` and no `preinstall`, `install`, `postinstall` or `prepare` scripts.
+3. `npm pack @wireup/core@<version> --dry-run` lists only `dist/index.{js,cjs,d.ts,d.cts}`, `package.json`, `README.md`, `LICENSE` and `CHANGELOG.md`, and the tarball's `package.json` has empty `dependencies` and no `preinstall`, `install`, `postinstall` or `prepare` scripts.
 4. `CHANGELOG.md` has an entry for the version, the diff `v<previous>...v<version>` matches it, and you have skimmed `dist/index.js` for network, filesystem, `child_process`, `eval` or `Function` usage.
 5. Your own tests pass with the new version pinned exactly, with no `^`.
 

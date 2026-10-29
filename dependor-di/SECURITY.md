@@ -16,13 +16,13 @@ Only the latest minor release line receives security fixes.
 Report privately through either channel:
 
 1. **GitHub private vulnerability reporting** (preferred):
-   <https://github.com/Bankai11/dependor/security/advisories/new>
+   <https://github.com/<PLACEHOLDER_GH>/wireup/security/advisories/new>
 2. **Email:** `security@YOUR-DOMAIN.example`
    <!-- TODO(maintainer): replace with a real, monitored mailbox before publishing. -->
 
 Include, where you can:
 
-- the affected version (`npm ls @bankai11/dependor`),
+- the affected version (`npm ls @wireup/core`),
 - a minimal reproduction or proof of concept,
 - the impact you believe it has,
 - whether you want public credit.

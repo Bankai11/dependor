@@ -1,5 +1,5 @@
 {
-  "name": "@bankai11/dependor",
+  "name": "@wireup/core",
   "version": "0.1.0",
   "description": "Tiny, zero-dependency, type-safe dependency injection container for Node.js and TypeScript",
   "keywords": [
@@ -10,13 +10,13 @@
     "typescript",
     "inversion-of-control"
   ],
-  "homepage": "https://github.com/Bankai11/dependor#readme",
+  "homepage": "https://github.com/<PLACEHOLDER_GH>/wireup#readme",
   "bugs": {
-    "url": "https://github.com/Bankai11/dependor/issues"
+    "url": "https://github.com/<PLACEHOLDER_GH>/wireup/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bankai11/dependor.git"
+    "url": "git+https://github.com/<PLACEHOLDER_GH>/wireup.git"
   },
   "license": "MIT",
   "author": "Bankai11",

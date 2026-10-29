@@ -32,7 +32,7 @@ export function readPackageDoc(file: PackageDoc): string {
 }
 
 export interface PackageMeta {
-  /** Exact npm package name, e.g. `@bankai11/dependor`. */
+  /** Exact npm package name, e.g. `@wireup/core`. */
   name: string;
   version: string;
   /** `https://github.com/owner/repo`, normalised from `repository.url`. */
@@ -42,7 +42,7 @@ export interface PackageMeta {
   homepage: string;
   bugsUrl: string;
   npmUrl: string;
-  /** Tarball basename npm pack produces, e.g. `bankai11-dependor-0.1.0.tgz`. */
+  /** Tarball basename npm pack produces, e.g. `wireup-core-0.1.0.tgz`. */
   tarballName: string;
 }
 
