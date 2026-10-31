@@ -1,8 +1,7 @@
 // website/app/security/page.tsx
 //
-// TODO: rename to @wireup/core when the scope is registered — search-and-replace,
-// do not hardcode in components. (The name is read from dependor-di/package.json
-// via getPackageMeta(); nothing below hardcodes it.)
+// The package name (@wireupjs/core) is read from dependor-di/package.json via
+// getPackageMeta(); nothing below hardcodes it, so a rename is a one-file change.
 import { ArrowDownIcon, ArrowRightIcon, TriangleAlertIcon } from 'lucide-react';
 import Link from 'next/link';
 import type { ReactNode } from 'react';

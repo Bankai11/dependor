@@ -21,7 +21,7 @@ Report privately through either channel:
 
 Include, where you can:
 
-- the affected version (`npm ls @wireup/core`),
+- the affected version (`npm ls @wireupjs/core`),
 - a minimal reproduction or proof of concept,
 - the impact you believe it has,
 - whether you want public credit.

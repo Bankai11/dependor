@@ -1,6 +1,6 @@
 # Threat Model
 
-This document describes what `@wireup/core` defends against, how, and
+This document describes what `@wireupjs/core` defends against, how, and
 what it deliberately does not. It is written for two audiences: maintainers
 deciding whether a change weakens a control, and consumers deciding whether
 to adopt a release.
@@ -10,7 +10,7 @@ to adopt a release.
 | Asset | Why it matters |
 | ----- | -------------- |
 | The published tarball on npm | Executed inside every consumer's process at startup. |
-| The npm package name `@wireup/core` | Whoever controls it controls future releases. |
+| The npm package name `@wireupjs/core` | Whoever controls it controls future releases. |
 | The GitHub repository and its `main` branch | Source of truth; what provenance attests to. |
 | The release workflow (`.github/workflows/publish.yml`) | The only path that is allowed to publish. |
 | The lockfile (`package-lock.json`) | Pins the dev toolchain that builds and tests releases. |
@@ -36,16 +36,16 @@ settings, not in this repo, so verify them.
 
 ### 2.2 Typosquatting and dependency confusion
 
-*Attacker publishes `wireupp`, `@wireup/core-js`, or the unscoped
-`wireup` package and hopes consumers install the wrong one.*
+*Attacker publishes `wireupp`, `@wireupjs/core-js`, anything under the lookalike `@wireup`
+scope (held by an unrelated npm user), or the unscoped `wireup` package and hopes consumers install the wrong one.*
 
 | Mitigation | Where |
 | ---------- | ----- |
-| The package is **scoped** (`@wireup/...`). Only the scope owner can publish into it, which removes the classic unscoped-name confusion attack. | `package.json` `name` |
+| The package is **scoped** (`@wireupjs/...`). Only the scope owner can publish into it, which removes the classic unscoped-name confusion attack. | `package.json` `name` |
 | `repository`, `homepage` and `bugs` all point to the same GitHub repo, and provenance cryptographically links the tarball to that repo. A squatted package cannot forge that link. | `package.json`, provenance |
 | The README tells consumers to compare these fields and the attestation before adopting. | README "How to verify" |
 
-Note: the bare name `wireup` on npm is **not** this project. Do not install it expecting this library.
+Note: the bare name `wireup` and the `@wireup` scope on npm are **not** this project. Do not install it expecting this library.
 
 ### 2.3 Malicious install-time scripts
 
@@ -126,7 +126,7 @@ names from config) and an attacker supplies `__proto__` as a service name.*
 
 Copy this into your upgrade PR.
 
-- [ ] `npm view @wireup/core@<version> dist.attestations` shows a
+- [ ] `npm view @wireupjs/core@<version> dist.attestations` shows a
       provenance attestation, and the npm web page for the version has the
       "Built and signed on GitHub Actions" panel.
 - [ ] `npm audit signatures` passes after `npm install` in a clean tree.
@@ -136,7 +136,7 @@ Copy this into your upgrade PR.
       `v<version>` in that repo.
 - [ ] The GitHub Actions run linked from the attestation is green and its
       "Verify published package" step shows matching SHA-256 hashes.
-- [ ] `npm pack @wireup/core@<version> --dry-run` lists only
+- [ ] `npm pack @wireupjs/core@<version> --dry-run` lists only
       `dist/index.{js,cjs,d.ts,d.cts}`, `package.json`, `README.md`,
       `LICENSE`, `CHANGELOG.md`. No `.map`, no `test/`, no `.github/`.
 - [ ] `package.json` in the tarball has **empty** `dependencies` and **no**

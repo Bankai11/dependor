@@ -1,4 +1,4 @@
-# @wireup/core
+# @wireupjs/core
 
 A tiny, zero-dependency, type-safe dependency injection container for Node.js
 and TypeScript. One file of runtime code, no decorators, no reflection, no
@@ -25,15 +25,15 @@ Ships as ESM and CommonJS with bundled `.d.ts` files. Requires Node 18+.
 ## Install
 
 ```sh
-npm install @wireup/core
+npm install @wireupjs/core
 # or, if your workflow allows, refuse all install scripts across the tree:
-npm install @wireup/core --ignore-scripts
+npm install @wireupjs/core --ignore-scripts
 ```
 
 ## Quick start: the full lifecycle
 
 ```ts
-import { asClass, asFunction, asValue, createContainer } from '@wireup/core';
+import { asClass, asFunction, asValue, createContainer } from '@wireupjs/core';
 
 // 1. Plain application code. Nothing here knows about the container.
 interface Config {
@@ -144,7 +144,7 @@ Options: `{ eager?: boolean }` (default `true`).
 all exported.
 
 ```ts
-import type { Container, Resolved } from '@wireup/core';
+import type { Container, Resolved } from '@wireupjs/core';
 
 const defs = { answer: asValue(42) };
 type App = Container<typeof defs>;
@@ -154,7 +154,7 @@ type Answer = Resolved<(typeof defs)['answer']>; // number
 ### Error handling
 
 ```ts
-import { CircularDependencyError, DependorError, createContainer } from '@wireup/core';
+import { CircularDependencyError, DependorError, createContainer } from '@wireupjs/core';
 
 try {
   createContainer(definitions);
@@ -195,7 +195,7 @@ that what you installed is what this repository's CI built.
 1. **Verify registry signatures and provenance.**
 
    ```sh
-   npm install @wireup/core
+   npm install @wireupjs/core
    npm audit signatures
    ```
 
@@ -205,14 +205,14 @@ that what you installed is what this repository's CI built.
    transparency log.
 
 2. **Inspect the attestation on npm.** Open
-   `https://www.npmjs.com/package/@wireup/core/v/<version>` and look for
+   `https://www.npmjs.com/package/@wireupjs/core/v/<version>` and look for
    the **Provenance** panel ("Built and signed on GitHub Actions"). It names
    the source commit, the workflow file (`.github/workflows/publish.yml`) and
    links to the exact Actions run. Each GitHub release in this repo links to
    its npm version page. You can also print it from the CLI:
 
    ```sh
-   npm view @wireup/core@<version> dist.attestations
+   npm view @wireupjs/core@<version> dist.attestations
    ```
 
 3. **Compare the tarball hash with the GitHub release asset.** CI attaches
@@ -221,11 +221,11 @@ that what you installed is what this repository's CI built.
 
    ```sh
    # What the registry serves:
-   npm pack @wireup/core@<version>
-   sha256sum wireup-core-<version>.tgz
+   npm pack @wireupjs/core@<version>
+   sha256sum wireupjs-core-<version>.tgz
 
    # What CI built (download from https://github.com/Bankai11/dependor/releases/tag/v<version>):
-   cat wireup-core-<version>.tgz.sha256
+   cat wireupjs-core-<version>.tgz.sha256
    ```
 
    The two hashes must match. `npm pack --dry-run` on the installed package
@@ -236,7 +236,7 @@ that what you installed is what this repository's CI built.
 4. **Check the package metadata points at the real repo.**
 
    ```sh
-   npm view @wireup/core repository.url homepage bugs.url
+   npm view @wireupjs/core repository.url homepage bugs.url
    ```
 
    All three must reference `github.com/Bankai11/dependor`. A typosquat can

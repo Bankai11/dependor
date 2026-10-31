@@ -1,6 +1,6 @@
 name: ci-library
 
-# Runs the @wireup/core library checks. The library lives in dependor-di/ of
+# Runs the @wireupjs/core library checks. The library lives in dependor-di/ of
 # this monorepo, so every job sets that as its working directory and the
 # npm cache keys off dependor-di/package-lock.json.
 on:

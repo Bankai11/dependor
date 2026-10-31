@@ -4,7 +4,7 @@
  *
  * @example
  * ```ts
- * import { asClass, asFunction, asValue, createContainer } from '@wireup/core';
+ * import { asClass, asFunction, asValue, createContainer } from '@wireupjs/core';
  *
  * const container = createContainer({
  *   config: asValue({ greeting: 'hello' }),

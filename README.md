@@ -2,7 +2,7 @@
 
 Monorepo hosting three projects:
 
-- **[`dependor-di/`](./dependor-di/)** — `@wireup/core`: dependency-injection
+- **[`dependor-di/`](./dependor-di/)** — `@wireupjs/core`: dependency-injection
   library for Node.js and TypeScript. Published to npm with SLSA provenance
   from this repo. Verify at [wireup.dev/security](https://wireup.dev/security).
 - **[`website/`](./website/)** — Wireup documentation and trust site.

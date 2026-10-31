@@ -12,8 +12,8 @@ import {
   verifyRegistrySignature,
 } from './npm';
 
-const PKG = '@wireup/core';
-const ENCODED = '@wireup%2Fcore';
+const PKG = '@wireupjs/core';
+const ENCODED = '@wireupjs%2Fcore';
 
 type Route = { status: number; body?: unknown } | Error;
 
@@ -76,7 +76,7 @@ describe('getLatestVersion', () => {
           version: '0.1.0',
           dist: {
             integrity: 'sha512-abc',
-            tarball: 'https://registry.npmjs.org/@wireup/core/-/core-0.1.0.tgz',
+            tarball: 'https://registry.npmjs.org/@wireupjs/core/-/core-0.1.0.tgz',
             attestations: {
               url: `${REGISTRY_URL}/-/npm/v1/attestations/${ENCODED}@0.1.0`,
               provenance: { predicateType: 'https://slsa.dev/provenance/v1' },
@@ -97,7 +97,7 @@ describe('getLatestVersion', () => {
         name: PKG,
         version: '0.1.0',
         integrity: 'sha512-abc',
-        tarball: 'https://registry.npmjs.org/@wireup/core/-/core-0.1.0.tgz',
+        tarball: 'https://registry.npmjs.org/@wireupjs/core/-/core-0.1.0.tgz',
         publishedAt: '2026-10-29T10:00:00.000Z',
         attestationsUrl: `${REGISTRY_URL}/-/npm/v1/attestations/${ENCODED}@0.1.0`,
         provenancePredicateType: 'https://slsa.dev/provenance/v1',
