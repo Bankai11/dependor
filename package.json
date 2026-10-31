@@ -22,7 +22,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "chalk": "^4.1.2",
+    "chalk": "^6.0.1",
     "ora": "^5.4.1",
     "semver": "^7.5.4",
     "tar-stream": "^3.1.7",
