@@ -63,7 +63,7 @@ jobs:
 
       - name: Socket Basics scan
         if: steps.key.outputs.present == 'true'
-        uses: SocketDev/socket-basics@v3.4.1
+        uses: SocketDev/socket-basics@v3.5.0
         with:
           socket_security_api_key: ${{ secrets.SOCKET_SECURITY_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
